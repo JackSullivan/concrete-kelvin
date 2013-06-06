@@ -10,10 +10,9 @@ import scala.collection.mutable.Map
  * @author John Sullivan
  */
 trait KelvinLine {
+  import KelvinLine._
   def value:String
 
-  val LineRegex = new Regex(""":e_(\w*)_(\d*)\t(.*)\t([\d\.]+)""")
-  val IdRegex = new Regex("""(:e\w+)\t.*""")
   val LineRegex(docId, mentionId, bodyString, confidenceString) = value
   val entId = docId + "_" + mentionId
 
@@ -35,7 +34,11 @@ trait KelvinLine {
 }
 
 case class MentionType(val value:String) extends KelvinLine {
-  def kind:Vertex.Kind = value.split("\\t")(2) match {
+  val TypeRegex = new Regex("""type\t(\w+)""")
+
+  val TypeRegex(typeString) = bodyString
+
+  def kind:Vertex.Kind = typeString match {
     case "ORG" => Vertex.Kind.ORGANIZATION
     case "PER" => Vertex.Kind.PERSON
     case "GPE" => Vertex.Kind.GPE
@@ -50,33 +53,43 @@ case class MentionType(val value:String) extends KelvinLine {
 }
 
 case class MentionText(val value:String) extends KelvinLine {
+  val TextValueRegex = new Regex("""[_\w]+\t"(.+)"\t.+""") //todo think more about regex values vis-a-vis inside the quotes
+
+  val TextValueRegex(mentionText) = bodyString
+
   def toStringAttribute:StringAttribute = StringAttribute.newBuilder
     .setUuid(KelvinLine.genUUID)
     .setMetadata(metadata)
-    .setValue(value)
+    .setValue(mentionText)
     .build
 }
 
 case class MentionRelation(val value:String) extends KelvinLine {
-  def toRelation:Relation = bodyString.split("\\t")(1) match { // todo Check we have all we need
-    case IdRegex(id) => Relation.newBuilder
+  val ValueRelationRegex = new Regex("""([\w:]+)\t"(.+)"\t.*""") //todo think more about regex values vis-a-vis inside the quotes
+  val VertexRelationRegex = new Regex("""([\w:]+)\t(:e\w+)\t.*""")
+
+  def toRelation:Relation = bodyString match { // todo Check we have all we need
+    case VertexRelationRegex(relation, id) => Relation.newBuilder
       .setUuid(KelvinLine.genUUID)
       .setKind(Relation.Kind.VERTEX)
-      .setName(bodyString.split("\\t").head)
+      .setName(relation)
       .addVertices(KelvinLine.getMentionUUID(id))
       .build
-    case relationValue => Relation.newBuilder
+    case ValueRelationRegex(relation, text) => Relation.newBuilder
       .setUuid(KelvinLine.genUUID)
       .setKind(Relation.Kind.VALUE)
-      .setName(bodyString.split("\\t").head)
-      .addValue(relationValue)
+      .setName(relation)
+      .addValue(text)
       .build
   }
 }
 
-object KelvinLine {
+object KelvinLine extends ((String) => Option[KelvinLine]) {
 
   private val idToUUIDMap:Map[String, ConUUID] = Map[String,ConUUID]()
+
+  val LineRegex = new Regex(""":e_(\w+)_(\d+)\t(.*)\t([\d\.]+)""")
+  val IdRegex = new Regex("""(:e\w+)\t.*""")
 
   def getMentionUUID(mentId:String):ConUUID = idToUUIDMap.getOrElseUpdate(mentId, genUUID)
 
@@ -85,10 +98,14 @@ object KelvinLine {
     ConUUID.newBuilder.setHigh(uuid.getMostSignificantBits).setLow(uuid.getLeastSignificantBits).build
   }
 
-  def apply(value:String):KelvinLine = value.split("\\t")(1) match { // This is dangerous
-    case "type" => new MentionType(value)
-    case "mention" => new MentionText(value)
-    case _ => new MentionRelation(value)
+  def apply(value:String):Option[KelvinLine] = value match {
+    case LineRegex(_, _, bodyString, _) => bodyString.split("\\t").head match {
+      case "type" => Option(new MentionType(value))
+      case "mention" => Option(new MentionText(value))
+      case "canonical_mention" => Option(new MentionText(value))
+      case _ => Option(new MentionRelation(value))
+    }
+    case _ => None
   }
 
 }
