@@ -1,9 +1,10 @@
 package edu.jhu.hlt.concrete.converters.kelvin;
 
 import java.util.UUID
-import edu.jhu.hlt.concrete.Concrete.{CommunicationGUID, Vertex, StringAttribute, UUID => ConUUID, AttributeMetadata}
-import edu.jhu.hlt.concrete.Concrete.Vertex.{RelationOrBuilder, Relation}
+import edu.jhu.hlt.concrete.Concrete.{UUID => ConUUID, CommunicationGUID, AttributeMetadata, Vertex, VertexKindAttribute, StringAttribute}
+import edu.jhu.hlt.concrete.Concrete.Vertex.Relation
 import scala.util.matching.Regex
+import scala.collection.mutable.Map
 
 /**
  * @author John Sullivan
@@ -14,6 +15,7 @@ trait KelvinLine {
   val LineRegex = new Regex(""":e_(\w*)_(\d*)\t(.*)\t([\d\.]+)""")
   val IdRegex = new Regex("""(:e\w+)\t.*""")
   val LineRegex(docId, mentionId, bodyString, confidenceString) = value
+  val entId = docId + "_" + mentionId
 
   def commGUID:CommunicationGUID = CommunicationGUID.newBuilder
     .setCommunicationId(docId)
@@ -23,6 +25,13 @@ trait KelvinLine {
   def mentionNumber:Int = mentionId.toInt
 
   def confidence:Float = confidenceString.toFloat
+
+  def metadata:AttributeMetadata = AttributeMetadata.newBuilder
+    .setTool("Kelvin")
+    .setConfidence(confidence)
+    .build
+
+  def vertexUUID:ConUUID = KelvinLine.getMentionUUID(entId)
 }
 
 case class MentionType(val value:String) extends KelvinLine {
@@ -32,34 +41,44 @@ case class MentionType(val value:String) extends KelvinLine {
     case "GPE" => Vertex.Kind.GPE
     case _ => Vertex.Kind.UNKNOWN // We shouldn't get here
   }
-}
-case class MentionText(val value:String) extends KelvinLine {
-  def name:StringAttribute = StringAttribute.newBuilder
+
+  def toVertexKindAttribute:VertexKindAttribute = VertexKindAttribute.newBuilder
     .setUuid(KelvinLine.genUUID)
-    .setMetadata { AttributeMetadata.newBuilder
-      .setTool("Kelvin") //todo enable configuring tool source
-      .setConfidence(this.confidence)
-      .build
-    }
+    .setMetadata(metadata)
+    .setValue(kind)
+    .build
+}
+
+case class MentionText(val value:String) extends KelvinLine {
+  def toStringAttribute:StringAttribute = StringAttribute.newBuilder
+    .setUuid(KelvinLine.genUUID)
+    .setMetadata(metadata)
     .setValue(value)
     .build
 }
+
 case class MentionRelation(val value:String) extends KelvinLine {
-  def relation:RelationOrBuilder = bodyString.split("\\t")(1) match {
+  def toRelation:Relation = bodyString.split("\\t")(1) match { // todo Check we have all we need
     case IdRegex(id) => Relation.newBuilder
       .setUuid(KelvinLine.genUUID)
       .setKind(Relation.Kind.VERTEX)
       .setName(bodyString.split("\\t").head)
-      .addVertices(KelvinLine.genUUID) //todo figure out about actually pointing to vertices !!
+      .addVertices(KelvinLine.getMentionUUID(id))
+      .build
     case relationValue => Relation.newBuilder
       .setUuid(KelvinLine.genUUID)
       .setKind(Relation.Kind.VALUE)
       .setName(bodyString.split("\\t").head)
       .addValue(relationValue)
+      .build
   }
 }
 
 object KelvinLine {
+
+  private val idToUUIDMap:Map[String, ConUUID] = Map[String,ConUUID]()
+
+  def getMentionUUID(mentId:String):ConUUID = idToUUIDMap.getOrElseUpdate(mentId, genUUID)
 
   def genUUID:ConUUID = {
     val uuid = UUID.randomUUID()
