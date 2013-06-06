@@ -1,10 +1,10 @@
-package edu.jhu.hlt.concrete.converters.kelvin;
+package edu.jhu.hlt.concrete.converters.kelvin
 
 import java.util.UUID
 import edu.jhu.hlt.concrete.Concrete.{UUID => ConUUID, CommunicationGUID, AttributeMetadata, Vertex, VertexKindAttribute, StringAttribute}
 import edu.jhu.hlt.concrete.Concrete.Vertex.Relation
 import scala.util.matching.Regex
-import scala.collection.mutable.Map
+import scala.collection.mutable
 
 /**
  * @author John Sullivan
@@ -33,7 +33,7 @@ trait KelvinLine {
   def vertexUUID:ConUUID = KelvinLine.getMentionUUID(entId)
 }
 
-case class MentionType(val value:String) extends KelvinLine {
+case class MentionType(value:String) extends KelvinLine {
   val TypeRegex = new Regex("""type\t(\w+)""")
 
   val TypeRegex(typeString) = bodyString
@@ -52,7 +52,7 @@ case class MentionType(val value:String) extends KelvinLine {
     .build
 }
 
-case class MentionText(val value:String) extends KelvinLine {
+case class MentionText(value:String) extends KelvinLine {
   val TextValueRegex = new Regex("""[_\w]+\t"(.+)"\t.+""") //todo think more about regex values vis-a-vis inside the quotes
 
   val TextValueRegex(mentionText) = bodyString
@@ -64,9 +64,9 @@ case class MentionText(val value:String) extends KelvinLine {
     .build
 }
 
-case class MentionRelation(val value:String) extends KelvinLine {
+case class MentionRelation(value:String) extends KelvinLine {
   val ValueRelationRegex = new Regex("""([\w:]+)\t"(.+)"\t.*""") //todo think more about regex values vis-a-vis inside the quotes
-  val VertexRelationRegex = new Regex("""([\w:]+)\t(:e\w+)\t.*""")
+  val VertexRelationRegex = new Regex("""([\w:]+)\t:e_(\w+)\t.*""")
 
   def toRelation:Relation = bodyString match { // todo Check we have all we need
     case VertexRelationRegex(relation, id) => Relation.newBuilder
@@ -86,10 +86,10 @@ case class MentionRelation(val value:String) extends KelvinLine {
 
 object KelvinLine extends ((String) => Option[KelvinLine]) {
 
-  private val idToUUIDMap:Map[String, ConUUID] = Map[String,ConUUID]()
+  private val idToUUIDMap:mutable.Map[String, ConUUID] = mutable.Map[String,ConUUID]()
 
   val LineRegex = new Regex(""":e_(\w+)_(\d+)\t(.*)\t([\d\.]+)""")
-  val IdRegex = new Regex("""(:e\w+)\t.*""")
+  val IdRegex = new Regex(""":e_(\w+)\t.*""")
 
   def getMentionUUID(mentId:String):ConUUID = idToUUIDMap.getOrElseUpdate(mentId, genUUID)
 
