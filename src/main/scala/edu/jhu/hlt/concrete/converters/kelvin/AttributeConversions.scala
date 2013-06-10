@@ -14,6 +14,10 @@ object AttributeConversions {
     ConUUID.newBuilder.setHigh(uuid.getMostSignificantBits).setLow(uuid.getLeastSignificantBits).build
   }
 
+  implicit def Con2JavaUUID(cUUID:ConUUID):UUID = new UUID(cUUID.getHigh, cUUID.getLow)
+
+  implicit def Con2JavaUUIDTup(tcuuid:(ConUUID, ConUUID)):(UUID, UUID) = (tcuuid._1, tcuuid._2)
+
   implicit def String2FloatAttr(fltStr:String)(implicit meta:AttributeMetadata):FloatAttribute = FloatAttribute.newBuilder
     .setUuid(genUUID)
     .setMetadata(meta)

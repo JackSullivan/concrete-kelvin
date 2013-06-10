@@ -70,15 +70,19 @@ case class VertexMentionRelation(value:String, relation:String, otherId:String) 
   import KelvinLine._
   import AttributeConversions._
 
+  val isForward:Boolean = isNewEdge(myUUID -> getMentionUUID(otherId))
+
   def directedEdge:DirectedAttributes.Builder = relation match { // todo add other cases
     case _ => DirectedAttributes.newBuilder.addOtherAttributes(relation)
   }
 
-  def toBuilder:Edge.Builder = Edge.newBuilder
-    .setEdgeId(myUUID -> getMentionUUID(otherId)) //todo what about edges going the other way?
-    .setV1ToV2(directedEdge)
+  def toBuilder:Edge.Builder = {
+    val edg = Edge.newBuilder.setEdgeId(id)
+    if(isForward) edg.setV1ToV2(directedEdge) else edg.setV2ToV1(directedEdge)
+    edg
+  }
 
-  def id:EdgeId = myUUID -> getMentionUUID(otherId)
+  def id:EdgeId = if(isForward) myUUID -> getMentionUUID(otherId) else getMentionUUID(otherId) -> myUUID
 
 }
 
@@ -97,6 +101,7 @@ case class ValueMentionRelation(value:String, relation:String, text:String) exte
 object KelvinLine extends ((String) => Option[KelvinLine]) {
 
   private val idToUUIDMap:mutable.Map[String, ConUUID] = mutable.Map[String,ConUUID]()
+  private val edgeUUIDSet:mutable.Set[(UUID, UUID)] = mutable.Set[(UUID, UUID)]()
 
   val LineRegex = new Regex(""":e_(\w+)_(\d+)\t(.*)\t([\d\.]+)""")
   val IdRegex = new Regex(""":e_(\w+)\t.*""")
@@ -104,6 +109,13 @@ object KelvinLine extends ((String) => Option[KelvinLine]) {
   val VertexRelationRegex = new Regex("""([\w:]+)\t:e_(\w+)\t.*""")
 
   def getMentionUUID(mentId:String):ConUUID = idToUUIDMap.getOrElseUpdate(mentId, genUUID)
+  def isNewEdge(edgeId:(UUID, UUID)):Boolean =
+    if(edgeUUIDSet.contains(edgeId.swap)) { // if the reversed direction has been seen
+      false
+    } else {
+      edgeUUIDSet.add(edgeId)
+      true
+    }
 
   def genUUID:ConUUID = {
     val uuid = UUID.randomUUID()
