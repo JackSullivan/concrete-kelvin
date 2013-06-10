@@ -1,30 +1,30 @@
 package edu.jhu.hlt.concrete.converters.kelvin
 
-import scala.collection.JavaConverters._
 import edu.jhu.hlt.concrete.Concrete.{Vertex, UUID => ConUUID}
-import edu.jhu.hlt.concrete.Concrete.Vertex.RelationSet
+import edu.jhu.hlt.concrete.converters.kelvin.CommunicationTraits.{FinalMessage, Vertexable, MessageableSeq2Message}
 
 /**
  * @author John Sullivan
  */
-case class VertexMention(uuid:ConUUID, lines:Seq[KelvinLine]) {
+case class VertexMention(uuid:ConUUID, lines:Seq[Vertexable]) extends Vertexable with FinalMessage[Vertex, ConUUID] {
   val types:Seq[MentionType] = lines collect {case l:MentionType => l}
   val texts:Seq[MentionText] = lines collect {case l:MentionText => l}
-  val relations:Seq[MentionRelation] = lines collect {case l:MentionRelation => l}
+  val relations:Seq[ValueMentionRelation] = lines collect {case l:ValueMentionRelation => l}
+  require(types.length + texts.length + relations.length == lines.length)
 
-  def toVertex:Vertex = Vertex.newBuilder
-    .setUuid(uuid)
-    .addAllKind((types map {_.toVertexKindAttribute}).asJava)
-    .addAllName((texts map {_.toStringAttribute}).asJava)
-    .addRelationSetList {
-    RelationSet.newBuilder
-      .setUuid(KelvinLine.genUUID)
-      .addAllRelations((relations map {_.toRelation}).asJava)
-      .build
-    }.build
+  def toBuilder:Vertex.Builder = {
+    val vert = Vertex.newBuilder.setUuid(uuid)
+    if(types.nonEmpty) vert.mergeFrom(types)
+    if(texts.nonEmpty) vert.mergeFrom(texts)
+    if(relations.nonEmpty) vert.mergeFrom(relations)
+    vert
+  }
 
+  def toMessage:Vertex = toBuilder.build
+
+  def id:ConUUID = uuid
 }
 
 object VertexMention {
-  def apply(lines:Seq[KelvinLine]):Iterable[VertexMention] = lines.groupBy(_.vertexUUID) map {case (uuid, l) => new VertexMention(uuid, l)}
+  def apply(lines:Seq[Vertexable]):Iterable[VertexMention] = lines.groupBy(_.id) map {case (uuid, l) => new VertexMention(uuid, l)}
 }
