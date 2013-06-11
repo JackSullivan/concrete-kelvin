@@ -19,5 +19,5 @@ object CommunicationTraits {
     def toMessage:A
   }
 
-  implicit def MessageableSeq2Message[A <: Message,B <: Message](mess:Iterable[Messageable[A,B]]):Message = mess.map(_.toBuilder).reduce[Message.Builder]({(a:Message.Builder, b:Message.Builder) => a.mergeFrom(b.buildPartial)}).build
+  implicit def MessageableSeq2Message[A <: Message,B <: Message](mess:Iterable[Messageable[A,B]]):Message = mess.map(_.toBuilder).reduce[Message.Builder]({(a:Message.Builder, b:Message.Builder) => a.mergeFrom(b.buildPartial)}).buildPartial
 }

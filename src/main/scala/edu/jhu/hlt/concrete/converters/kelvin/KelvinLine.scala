@@ -89,7 +89,7 @@ case class VertexMentionRelation(value:String, relation:String, otherId:String) 
 case class ValueMentionRelation(value:String, relation:String, text:String) extends KelvinLine with Vertexable {
   import AttributeConversions._
   def toBuilder:Vertex.Builder = relation match { // todo add other cases
-    case "per:age" => Vertex.newBuilder.addAge(text)
+   // case "per:age" => Vertex.newBuilder.addAge(text)
     case _ => Vertex.newBuilder.addOtherAttributes(relation -> text)
   }
 

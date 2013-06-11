@@ -1,5 +1,7 @@
 package edu.jhu.hlt.concrete.converters.kelvin
 
+import java.util.logging.Logger
+import java.io.FileOutputStream
 import scala.io.Source
 import edu.jhu.hlt.concrete.Concrete.KnowledgeGraph
 import edu.jhu.hlt.concrete.converters.kelvin.CommunicationTraits.{Vertexable, Edgeable}
@@ -19,5 +21,18 @@ object Reader {
       .addAllVertex((vertexLines map {_.toMessage}).asJava)
       .addAllEdge((edgeLines map {_.toMessage}).asJava)
       .build
+  }
+
+  def main(args:Array[String]) {
+    val log = Logger.getLogger(Reader.getClass.getName)
+    val filename:String = System.getProperty("KelvinFile")
+    log.info("Parsing " + filename)
+    val kg:KnowledgeGraph = Reader(filename)
+    log.info(filename + " parsed to knowledge graph")
+    val wrt = new FileOutputStream(filename + ".pb")
+    kg.writeTo(wrt)
+    wrt.flush
+    wrt.close
+    log.info("Wrote to " + filename + ".pb")
   }
 }
