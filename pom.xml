@@ -66,6 +66,21 @@
         </executions>
         <configuration>
           <scalaVersion>${scala.version}</scalaVersion>
+          <sourceDir>src/main/scala</sourceDir>
+          <recompileMode>incremental</recompileMode>
+          <jvmArgs>
+              <jvmArg>-Xms512m</jvmArg>
+              <jvmArg>-Xmx2g</jvmArg>
+          </jvmArgs>
+          <launchers>
+            <launcher>
+              <id>kelvin2concrete</id>
+              <mainClass>edu.jhu.hlt.concrete.converters.kelvin.Reader</mainClass>
+              <jvmArgs>
+                <jvmArg>-DKelvinFile=${kelvinFile}</jvmArg>
+              </jvmArgs>
+            </launcher>
+          </launchers>
         </configuration>
       </plugin>
       <plugin>
