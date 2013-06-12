@@ -1,5 +1,6 @@
 package edu.jhu.hlt.concrete.converters.kelvin
 
+import java.io.File
 import java.util.logging.Logger
 import java.io.FileOutputStream
 import scala.io.Source
@@ -23,16 +24,28 @@ object Reader {
       .build
   }
 
-  def main(args:Array[String]) {
+  def processFile(log: Logger,f: File)
+  {
+    log.info("Parsing " + f.getName)
+    val kg:KnowledgeGraph = Reader(f.getPath)
+    log.info(f.getName + " parsed to knowledge graph")    
+    val out= new FileOutputStream(f.getPath + ".pb")
+    kg.writeTo(out)
+    out.flush
+    out.close
+    log.info("Wrote to " + f.getName);
+  }
+ 
+
+  def main(args:Array[String])
+  {
     val log = Logger.getLogger(Reader.getClass.getName)
     val filename:String = System.getProperty("KelvinFile")
-    log.info("Parsing " + filename)
-    val kg:KnowledgeGraph = Reader(filename)
-    log.info(filename + " parsed to knowledge graph")
-    val wrt = new FileOutputStream(filename + ".pb")
-    kg.writeTo(wrt)
-    wrt.flush
-    wrt.close
-    log.info("Wrote to " + filename + ".pb")
+    val file= new File(filename)
+    if (file.isDirectory){
+	val files = new File(filename).listFiles.filter(_.isFile)
+    	for(f <- files) processFile(log,f)
+    }else processFile(log,file)
   }
+
 }
