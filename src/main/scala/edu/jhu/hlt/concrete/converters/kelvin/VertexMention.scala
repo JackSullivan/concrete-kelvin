@@ -8,11 +8,10 @@ import edu.jhu.hlt.concrete.converters.kelvin.CommunicationTraits.{FinalMessage,
  */
 case class VertexMention(uuid:ConUUID, lines:Seq[Vertexable]) extends Vertexable with FinalMessage[Vertex, ConUUID] {
   val types:Seq[MentionType] = lines collect {case l:MentionType => l}
-  val texts:Seq[MentionText] = lines collect {case l:MentionText => l}
+  val texts:Seq[MentionText] = lines.collect{case l:MentionText => l}.groupBy(_.mentionText).values.map{_.head}.toSeq // to remove duplicate names
   val relations:Seq[ValueMentionRelation] = lines collect {case l:ValueMentionRelation => l}
-  require(types.length + texts.length + relations.length == lines.length)
 
-  def toBuilder:Vertex.Builder = {
+  def toBuilder:Vertex.Builder = { //todo set DataSetId
     val vert = Vertex.newBuilder.setUuid(uuid)
     if(types.nonEmpty) vert.mergeFrom(types)
     if(texts.nonEmpty) vert.mergeFrom(texts)

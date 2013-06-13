@@ -47,19 +47,21 @@ case class MentionType(value:String) extends KelvinLine with Vertexable {
   }
 
   def toBuilder:Vertex.Builder = Vertex.newBuilder
+    .setDataSetId(docId)
     .setUuid(myUUID)
     .addKind(kind)
 
   def id:ConUUID = myUUID
 }
 
-case class MentionText(value:String) extends KelvinLine with Vertexable {
+case class MentionText(value:String) extends KelvinLine with Vertexable { //todo keep hold of references to text
   import AttributeConversions._
-  val TextValueRegex = new Regex("""[_\w]+\t"(.+)"\t.+""")
+  val TextValueRegex = new Regex("""[_\w]+\t"(.+)"\t[\w\d_\.]+\t(\d+)\t(\d+)""") //todo test new regex
 
-  val TextValueRegex(mentionText) = bodyString
+  val TextValueRegex(mentionText, mentionStart, mentionEnd) = bodyString
 
   def toBuilder:Vertex.Builder = Vertex.newBuilder
+    .setDataSetId(docId)
     .setUuid(myUUID)
     .addName(mentionText)
 
@@ -70,19 +72,14 @@ case class VertexMentionRelation(value:String, relation:String, otherId:String) 
   import KelvinLine._
   import AttributeConversions._
 
-  val isForward:Boolean = isNewEdge(myUUID -> getMentionUUID(otherId))
-
   def directedEdge:DirectedAttributes.Builder = relation match { // todo add other cases
     case _ => DirectedAttributes.newBuilder.addOtherAttributes(relation)
   }
 
-  def toBuilder:Edge.Builder = {
-    val edg = Edge.newBuilder.setEdgeId(id)
-    if(isForward) edg.setV1ToV2(directedEdge) else edg.setV2ToV1(directedEdge)
-    edg
-  }
+  def toBuilder:Edge.Builder = Edge.newBuilder.setEdgeId(id)
+    .setV1ToV2(directedEdge)
 
-  def id:EdgeId = if(isForward) myUUID -> getMentionUUID(otherId) else getMentionUUID(otherId) -> myUUID
+  def id:EdgeId = myUUID -> getMentionUUID(otherId)
 
 }
 
@@ -90,7 +87,7 @@ case class ValueMentionRelation(value:String, relation:String, text:String) exte
   import AttributeConversions._
   def toBuilder:Vertex.Builder = relation match { // todo add other cases
    // case "per:age" => Vertex.newBuilder.addAge(text)
-    case _ => Vertex.newBuilder.addOtherAttributes(relation -> text)
+    case _ => Vertex.newBuilder.setDataSetId(docId).addOtherAttributes(relation -> text)
   }
 
   def id:ConUUID = myUUID
