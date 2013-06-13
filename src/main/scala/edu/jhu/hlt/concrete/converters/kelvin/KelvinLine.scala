@@ -98,7 +98,6 @@ case class ValueMentionRelation(value:String, relation:String, text:String) exte
 object KelvinLine extends ((String) => Option[KelvinLine]) {
 
   private val idToUUIDMap:mutable.Map[String, ConUUID] = mutable.Map[String,ConUUID]()
-  private val edgeUUIDSet:mutable.Set[(UUID, UUID)] = mutable.Set[(UUID, UUID)]()
 
   val LineRegex = new Regex(""":e_(\w+)_(\d+)\t(.*)\t([\d\.]+)""")
   val IdRegex = new Regex(""":e_(\w+)\t.*""")
@@ -106,13 +105,6 @@ object KelvinLine extends ((String) => Option[KelvinLine]) {
   val VertexRelationRegex = new Regex("""([\w:]+)\t:e_(\w+)\t.*""")
 
   def getMentionUUID(mentId:String):ConUUID = idToUUIDMap.getOrElseUpdate(mentId, genUUID)
-  def isNewEdge(edgeId:(UUID, UUID)):Boolean =
-    if(edgeUUIDSet.contains(edgeId.swap)) { // if the reversed direction has been seen
-      false
-    } else {
-      edgeUUIDSet.add(edgeId)
-      true
-    }
 
   def genUUID:ConUUID = {
     val uuid = UUID.randomUUID()
