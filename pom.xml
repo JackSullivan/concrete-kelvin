@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>edu.jhu.hlt.concrete.converters.kelvin</groupId>
   <artifactId>concrete_kelvin</artifactId>
-  <version>0.3</version>
+  <version>0.3.1</version>
   <inceptionYear>2013</inceptionYear>
   <properties>
     <scala.version>2.9.2</scala.version>

@@ -18,19 +18,29 @@ It probably makes the most sense to read in this data like so:
 
 ```scala
 import java.io.{DataInputStream, FileInputStream}
-import edu.jhu.hlt.concrete.{Vertex, Edge}
+import edu.jhu.hlt.concrete.Concrete.{Vertex, Edge}
+import scala.collection.mutable.ArrayBuffer
 
 object App {
-  val stream = new DataInputStream(new FileInputStream("kelvinfile.pb"))
 
-  val vertices:mutable.ArrayBuffer[Vertex] = new mutable.ArrayBuffer[Vertex]()
-  val edges:mutable:ArrayBuffer[Edge] = new mutable.ArrayBuffer[Edge]()
+  def apply(filename:String):(Iterable[Vertex], Iterable[Edge]) = {
+    val stream = new DataInputStream(new FileInputStream(filename))
 
-  for(idex <- 0 until stream.readInt) {
-    vertices += Vertex.parseFrom(stream)
+    val vertices:ArrayBuffer[Vertex] = new ArrayBuffer[Vertex]()
+    val edges:ArrayBuffer[Edge] = new ArrayBuffer[Edge]()
+
+    val vertexCount = stream.readInt
+
+    for(index <- 0 until vertexCount) {
+      println("Read in vertex " + index + " of " + vertexCount)
+      vertices += Vertex.parseDelimitedFrom(stream)
+    }
+    val edgeCount = stream.readInt
+    for(index <- 0 until edgeCount) {
+      edges += Edge.parseDelimitedFrom(stream)
+    }
+    (vertices, edges)
   }
 
-  for(idex <- 0 until stream.readInt) {
-    edges += Edge.parseFrom(stream)
-  }
 }
+```
