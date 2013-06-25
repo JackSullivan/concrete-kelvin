@@ -1,14 +1,24 @@
 package edu.jhu.hlt.concrete.converters.kelvin
 
-import java.util.UUID
-import edu.jhu.hlt.concrete.Concrete.{UUID => ConUUID, CommunicationGUID, AttributeMetadata, Vertex, DirectedAttributes, Edge, EdgeId}
+import edu.jhu.hlt.concrete.Concrete.{CommunicationGUID, Vertex, DirectedAttributes, Edge}
 import scala.util.matching.Regex
 import scala.collection.mutable
-import edu.jhu.hlt.concrete.converters.kelvin.CommunicationTraits.{Edgeable, Vertexable}
+import edu.jhu.hlt.concrete.util.scala._
 
 /**
  * @author John Sullivan
  */
+trait Vertexable {
+  def id:ValUUID
+  def toBuilder:Vertex.Builder = Vertex.newBuilder.setUuid(id.asConcrete)
+  override def equals(that:Any):Boolean = that.isInstanceOf[Vertexable] && this.id == that.asInstanceOf[Vertexable].id
+}
+trait Edgeable {
+  def id:(ValUUID, ValUUID)
+  def toBuilder:Edge.Builder = Edge.newBuilder.setEdgeId(id.asConcrete)
+  override def equals(that:Any):Boolean = that.isInstanceOf[Vertexable] && this.id == that.asInstanceOf[Vertexable].id
+}
+
 trait KelvinLine {
   import KelvinLine._
   def value:String
@@ -18,98 +28,81 @@ trait KelvinLine {
 
   def commGUID:CommunicationGUID = CommunicationGUID.newBuilder
     .setCommunicationId(docId)
-    .setCorpusName("") //todo populate this
+    .setCorpusName(Settings.Corpus.corpusName)
     .build
 
   def mentionNumber:Int = mentionId.toInt
 
   def confidence:Float = confidenceString.toFloat
 
-  implicit def metadata:AttributeMetadata = AttributeMetadata.newBuilder
-    .setTool("Kelvin")
-    .setConfidence(confidence)
-    .build
-
-  def myUUID:ConUUID = KelvinLine.getMentionUUID(entId)
+  def uuid = KelvinLine.getMentionUUID(entId)
 }
 
 case class MentionType(value:String) extends KelvinLine with Vertexable {
-  import AttributeConversions._
   val TypeRegex = new Regex("""type\t(\w+)""")
 
   val TypeRegex(typeString) = bodyString
 
-  def kind:Vertex.Kind = typeString match {
-    case "ORG" => Vertex.Kind.ORGANIZATION
-    case "PER" => Vertex.Kind.PERSON
-    case "GPE" => Vertex.Kind.GPE
-    case _ => Vertex.Kind.UNKNOWN // We shouldn't get here
-  }
+  def id = uuid
 
-  def toBuilder:Vertex.Builder = Vertex.newBuilder
+  override def toBuilder:Vertex.Builder = super.toBuilder
     .setDataSetId(docId)
-    .setUuid(myUUID)
-    .addKind(kind)
+    .addKind((typeString -> confidence).asVertexKindAttribute)
 
-  def id:ConUUID = myUUID
 }
 
 case class MentionText(value:String) extends KelvinLine with Vertexable { //todo keep hold of references to text
-  import AttributeConversions._
-  val TextValueRegex = new Regex("""[_\w]+\t"(.+)"\t[\w\d_\.]+\t(\d+)\t(\d+)""") //todo test new regex
+  val TextValueRegex = new Regex("""[_\w]+\t"(.+)"\t[\w\d_\.]+\t(\d+)\t(\d+)""")
 
   val TextValueRegex(mentionText, mentionStart, mentionEnd) = bodyString
 
-  def toBuilder:Vertex.Builder = Vertex.newBuilder
-    .setDataSetId(docId)
-    .setUuid(myUUID)
-    .addName(mentionText)
+  def id = uuid
 
-  def id:ConUUID = myUUID
+  override def toBuilder:Vertex.Builder = super.toBuilder
+    .setDataSetId(docId)
+    .addName((mentionText -> confidence).asStringAttribute)
 }
 
 case class VertexMentionRelation(value:String, relation:String, otherId:String) extends KelvinLine with Edgeable { // all vertex mentions will be edge builders, some w
   import KelvinLine._
-  import AttributeConversions._
+
+  def id = uuid -> getMentionUUID(otherId)
+  def isForward = uuid < getMentionUUID(otherId)
 
   def directedEdge:DirectedAttributes.Builder = relation match { // todo add other cases
-    case _ => DirectedAttributes.newBuilder.addOtherAttributes(relation)
+    case _ => DirectedAttributes.newBuilder.addOtherAttributes((relation -> confidence).asLabeledAttribute)
   }
 
-  def toBuilder:Edge.Builder = Edge.newBuilder.setEdgeId(id)
-    .setV1ToV2(directedEdge)
-
-  def id:EdgeId = myUUID -> getMentionUUID(otherId)
-
+  override def toBuilder:Edge.Builder = if(isForward) {
+    super.toBuilder
+      .setV1ToV2(directedEdge)
+  } else {
+    super.toBuilder
+      .setV2ToV1(directedEdge)
+  }
 }
 
 case class ValueMentionRelation(value:String, relation:String, text:String) extends KelvinLine with Vertexable {
-  import AttributeConversions._
-  def toBuilder:Vertex.Builder = relation match { // todo add other cases
+
+  def id = uuid
+
+  override def toBuilder:Vertex.Builder = relation match { // todo add other cases
    // case "per:age" => Vertex.newBuilder.addAge(text)
-    case _ => Vertex.newBuilder.setDataSetId(docId).addOtherAttributes(relation -> text)
+    case _ => super.toBuilder.setDataSetId(docId).addOtherAttributes((relation, text, confidence).asLabeledAttribute)
   }
-
-  def id:ConUUID = myUUID
-
 }
 
 
 object KelvinLine extends ((String) => Option[KelvinLine]) {
 
-  private val idToUUIDMap:mutable.Map[String, ConUUID] = mutable.Map[String,ConUUID]()
+  private val idToUUIDMap:mutable.Map[String, ValUUID] = mutable.Map[String, ValUUID]()
 
   val LineRegex = new Regex(""":e_(\w+)_(\d+)\t(.*)\t([\d\.]+)""")
   val IdRegex = new Regex(""":e_(\w+)\t.*""")
   val ValueRelationRegex = new Regex("""([\w:]+)\t"(.+)"\t.*""")
   val VertexRelationRegex = new Regex("""([\w:]+)\t:e_(\w+)\t.*""")
 
-  def getMentionUUID(mentId:String):ConUUID = idToUUIDMap.getOrElseUpdate(mentId, genUUID)
-
-  def genUUID:ConUUID = {
-    val uuid = UUID.randomUUID()
-    ConUUID.newBuilder.setHigh(uuid.getMostSignificantBits).setLow(uuid.getLeastSignificantBits).build
-  }
+  def getMentionUUID(mentId:String):ValUUID = idToUUIDMap.getOrElseUpdate(mentId, ValUUID.random)
 
   def apply(value:String):Option[KelvinLine] = value match {
     case LineRegex(_, _, bodyString, _) => bodyString.split("\\t").head match {
