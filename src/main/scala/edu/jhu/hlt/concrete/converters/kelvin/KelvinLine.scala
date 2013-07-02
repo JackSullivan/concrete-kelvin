@@ -1,23 +1,20 @@
 package edu.jhu.hlt.concrete.converters.kelvin
 
-import edu.jhu.hlt.concrete.Concrete.{CommunicationGUID, Vertex, DirectedAttributes, Edge}
+import edu.jhu.hlt.concrete.Concrete._
 import scala.util.matching.Regex
 import scala.collection.mutable
 import edu.jhu.hlt.concrete.util.scala._
+import edu.jhu.hlt.concrete.converters.kelvin.ValueMentionRelation
+import edu.jhu.hlt.concrete.converters.kelvin.MentionText
+import edu.jhu.hlt.concrete.converters.kelvin.MentionType
+import edu.jhu.hlt.concrete.converters.kelvin.VertexMentionRelation
 
 /**
  * @author John Sullivan
  */
-trait Vertexable {
-  def id:ValUUID
-  def toBuilder:Vertex.Builder = Vertex.newBuilder.setUuid(id.asConcrete)
-  override def equals(that:Any):Boolean = that.isInstanceOf[Vertexable] && this.id == that.asInstanceOf[Vertexable].id
-}
-trait Edgeable {
-  def id:(ValUUID, ValUUID)
-  def toBuilder:Edge.Builder = Edge.newBuilder.setEdgeId(id.asConcrete)
-  override def equals(that:Any):Boolean = that.isInstanceOf[Vertexable] && this.id == that.asInstanceOf[Vertexable].id
-}
+trait Vertexable extends Identified[ValUUID]{def toBuilder:Vertex.Builder = Vertex.newBuilder.setUuid(id.asConcrete)}
+trait Edgeable extends Identified[(ValUUID, ValUUID)] {def toBuilder:Edge.Builder = Edge.newBuilder.setEdgeId(id.asConcrete)}
+trait EntityMentionable extends Identified[ValUUID] {def toBuilder:EntityMention.Builder = EntityMention.newBuilder.setUuid(id.asConcrete)}
 
 trait KelvinLine {
   import KelvinLine._
@@ -51,7 +48,7 @@ case class MentionType(value:String) extends KelvinLine with Vertexable {
 
 }
 
-case class MentionText(value:String) extends KelvinLine with Vertexable { //todo keep hold of references to text
+case class MentionText(value:String) extends KelvinLine with Vertexable {
   val TextValueRegex = new Regex("""[_\w]+\t"(.+)"\t[\w\d_\.]+\t(\d+)\t(\d+)""")
 
   val TextValueRegex(mentionText, mentionStart, mentionEnd) = bodyString
