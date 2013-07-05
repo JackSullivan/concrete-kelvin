@@ -4,10 +4,6 @@ import edu.jhu.hlt.concrete.Concrete._
 import scala.util.matching.Regex
 import scala.collection.mutable
 import edu.jhu.hlt.concrete.util.scala._
-import edu.jhu.hlt.concrete.converters.kelvin.ValueMentionRelation
-import edu.jhu.hlt.concrete.converters.kelvin.MentionText
-import edu.jhu.hlt.concrete.converters.kelvin.MentionType
-import edu.jhu.hlt.concrete.converters.kelvin.VertexMentionRelation
 
 /**
  * @author John Sullivan
