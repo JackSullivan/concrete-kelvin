@@ -17,28 +17,27 @@ The system will write a file out to `<my file name>.pb` that will contain:
 It probably makes the most sense to read in this data like so:
 
 ```scala
-import java.io.{DataInputStream, FileInputStream}
 import edu.jhu.hlt.concrete.Graph.{Vertex, Edge}
+import edu.jhu.hlt.concrete.io.ProtocolBufferReader
 import scala.collection.mutable.ArrayBuffer
 
 object App {
 
-  def apply(filename:String):(Iterable[Vertex], Iterable[Edge]) = {
-    val stream = new DataInputStream(new FileInputStream(filename))
-
+  def apply(vertexFile:String, edgeFile: String):(Iterable[Vertex], Iterable[Edge]) = {
     val vertices:ArrayBuffer[Vertex] = new ArrayBuffer[Vertex]()
     val edges:ArrayBuffer[Edge] = new ArrayBuffer[Edge]()
 
-    val vertexCount = stream.readInt
+    val vertexReader = new ProtocolBufferReader[Vertex](vertexFile,classOf[Vertex])
+    val edgeReader = new ProtocolBufferReader[Edge](vertexFile,classOf[Edge])
 
-    for(index <- 0 until vertexCount) {
-      println("Read in vertex " + index + " of " + vertexCount)
-      vertices += Vertex.parseDelimitedFrom(stream)
+    while(vertexReader.hasNext()) {
+        vertices += vertexReader.next()
     }
-    val edgeCount = stream.readInt
-    for(index <- 0 until edgeCount) {
-      edges += Edge.parseDelimitedFrom(stream)
+    vertexReader.close()
+    while(edgeReader.hasNext()) {
+        edges += edgeReader.next()
     }
+    edgeReader.close()
     (vertices, edges)
   }
 
