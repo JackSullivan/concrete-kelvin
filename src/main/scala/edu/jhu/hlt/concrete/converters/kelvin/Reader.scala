@@ -1,12 +1,12 @@
 package edu.jhu.hlt.concrete.converters.kelvin
 
 import java.util.logging.Logger
-import java.io.{DataOutputStream, FileOutputStream}
 import scala.io.Source
-import edu.jhu.hlt.concrete.Concrete.{Edge, Vertex}
+import edu.jhu.hlt.concrete.Graph.{Edge, Vertex}
+import edu.jhu.hlt.concrete.io.ProtocolBufferWriter
 
 /**
- * @author John Sullivan
+ * @author John Sullivan, Jay DeYoung
  */
 object Reader {
   def apply(filename:String):(Iterable[Vertex], Iterable[Edge]) = {
@@ -24,19 +24,25 @@ object Reader {
     vertices -> edges
   }
 
+
   def main(args:Array[String]) {
     val log = Logger.getLogger(Reader.getClass.getName)
     val filename:String = System.getProperty("KelvinFile")
+    val (edgeFile,vertexFile) = (filename + ".edg.pb", filename+".ver.pb")
     log.info("Parsing " + filename)
     val (vertices, edges) = Reader(filename)
     log.info(filename + " parsed to vertices and edges")
-    val wrt = new DataOutputStream(new FileOutputStream(filename + ".pb"))
-    wrt.writeInt(vertices.size)
-    vertices.foreach(_.writeDelimitedTo(wrt))
-    wrt.writeInt(edges.size)
-    edges.foreach(_.writeDelimitedTo(wrt))
-    wrt.flush
-    wrt.close
-    log.info("Wrote to " + filename + ".pb")
+    val vertexWriter = new ProtocolBufferWriter(vertexFile)
+    val edgeWriter = new ProtocolBufferWriter(edgeFile)
+    for(vertex <- vertices) {
+      vertexWriter.write(vertex)
+    }
+    vertexWriter.close()
+    log.info("wrote vertices to " + vertexFile)
+    for(edge <- edges) {
+      edgeWriter.write(edge)
+    }
+    edgeWriter.close()
+    log.info("wrote edges to " + edgeFile)
   }
 }

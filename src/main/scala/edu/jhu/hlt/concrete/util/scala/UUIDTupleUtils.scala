@@ -1,6 +1,6 @@
 package edu.jhu.hlt.concrete.util.scala
 
-import edu.jhu.hlt.concrete.Concrete.EdgeId
+import edu.jhu.hlt.concrete.Graph.EdgeId
 
 /**
  * @author John Sullivan

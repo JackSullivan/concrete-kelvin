@@ -1,6 +1,6 @@
 package edu.jhu.hlt.concrete.util.scala
 
-import edu.jhu.hlt.concrete.Concrete.{AttributeMetadata, AnnotationMetadata}
+import edu.jhu.hlt.concrete.Concrete.{AnnotationMetadata}
 
 /**
  * @author John Sullivan
@@ -8,11 +8,6 @@ import edu.jhu.hlt.concrete.Concrete.{AttributeMetadata, AnnotationMetadata}
 trait MetadataUtils {
 
   def self:Float
-
-  def asAttributeMeta:AttributeMetadata = AttributeMetadata.newBuilder
-    .setConfidence(self)
-    .setTool(Settings.Concrete.attributeMetadata)
-    .build
 
   def asAnnotationMeta:AnnotationMetadata = AnnotationMetadata.newBuilder
     .setConfidence(self)

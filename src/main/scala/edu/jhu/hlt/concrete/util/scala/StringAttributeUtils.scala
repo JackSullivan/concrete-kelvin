@@ -1,6 +1,7 @@
 package edu.jhu.hlt.concrete.util.scala
 
-import edu.jhu.hlt.concrete.Concrete.{Vertex, StringAttribute, LabeledAttribute, VertexKindAttribute}
+import edu.jhu.hlt.concrete.Graph.{StringAttribute, LabeledAttribute}
+import edu.jhu.hlt.concrete.Graph.{Vertex, VertexKindAttribute}
 
 /**
  * @author John Sullivan
@@ -13,13 +14,13 @@ trait StringAttributeUtils {
 
   def asStringAttribute:StringAttribute = StringAttribute.newBuilder
     .setUuid(genUUID)
-    .setMetadata(confidence.asAttributeMeta)
+    .setMetadata(confidence.asAnnotationMeta)
     .setValue(value)
     .build
 
   def asLabeledAttribute:LabeledAttribute = LabeledAttribute.newBuilder
     .setUuid(genUUID)
-    .setMetadata(confidence.asAttributeMeta)
+    .setMetadata(confidence.asAnnotationMeta)
     .setLabel(value)
     .build
 
@@ -32,7 +33,7 @@ trait StringAttributeUtils {
 
   def asVertexKindAttribute:VertexKindAttribute = VertexKindAttribute.newBuilder
     .setUuid(genUUID)
-    .setMetadata(confidence.asAttributeMeta)
+    .setMetadata(confidence.asAnnotationMeta)
     .setValue(kind)
     .build
 }

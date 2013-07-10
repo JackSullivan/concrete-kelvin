@@ -1,6 +1,7 @@
 package edu.jhu.hlt.concrete.util
 
-import edu.jhu.hlt.concrete.Concrete.{EdgeId, UUID => ConUUID}
+import edu.jhu.hlt.concrete.Concrete.{UUID => ConUUID}
+import edu.jhu.hlt.concrete.Graph.{EdgeId}
 
 /**
  * @author John Sullivan
