@@ -1,6 +1,6 @@
 package edu.jhu.hlt.concrete.util.scala
 
-import edu.jhu.hlt.concrete.Concrete.LabeledAttribute
+import edu.jhu.hlt.concrete.Graph.LabeledAttribute
 
 /**
  * @author John Sullivan
@@ -14,6 +14,6 @@ trait TupleStringAttributeUtils {
     .setUuid(genUUID)
     .setLabel(label)
     .setValue(value)
-    .setMetadata(confidence.asAttributeMeta)
+    .setMetadata(confidence.asAnnotationMeta)
     .build
 }

@@ -1,6 +1,7 @@
 package edu.jhu.hlt.concrete.converters.kelvin
 
 import edu.jhu.hlt.concrete.Concrete._
+import edu.jhu.hlt.concrete.Graph.{Vertex,Edge,DirectedAttributes}
 import scala.util.matching.Regex
 import scala.collection.mutable
 import edu.jhu.hlt.concrete.util.scala._

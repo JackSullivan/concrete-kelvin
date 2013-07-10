@@ -3,7 +3,7 @@ package edu.jhu.hlt.concrete.converters.kelvin
 import java.util.logging.Logger
 import java.io.{DataOutputStream, FileOutputStream}
 import scala.io.Source
-import edu.jhu.hlt.concrete.Concrete.{Edge, Vertex}
+import edu.jhu.hlt.concrete.Graph.{Edge, Vertex}
 
 /**
  * @author John Sullivan

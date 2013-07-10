@@ -18,7 +18,7 @@ It probably makes the most sense to read in this data like so:
 
 ```scala
 import java.io.{DataInputStream, FileInputStream}
-import edu.jhu.hlt.concrete.Concrete.{Vertex, Edge}
+import edu.jhu.hlt.concrete.Graph.{Vertex, Edge}
 import scala.collection.mutable.ArrayBuffer
 
 object App {
