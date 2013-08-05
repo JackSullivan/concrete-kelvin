@@ -8,8 +8,8 @@ To convert a file from Kelvin to Concrete run the following command (replacing t
 `mvn scala:run -Dlauncher=kelvin2concrete -DKelvinFile=<my file name>`
 
 The system will write two files (using the HLTCOE Concrete standard protocol buffer reader/writers), named:
-<my file name>.ver.pb for vertex protobufs
-<my file name>.edg.pb for edge protobufs
+`<my file name>.ver.pb` for vertex protobufs  
+`<my file name>.edg.pb` for edge protobufs  
 
 It probably makes the most sense to read in this data like so:
 
